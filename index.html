@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CryptoLab — Cifrados educativos en el navegador</title>
+  <style>
+    :root{
+      --bg:#0f1221; --fg:#e8ecff; --muted:#a7b0d8; --card:#171a2b; --accent:#6aa6ff; --good:#2ec27e; --warn:#ffcc66; --bad:#ff6b6b;
+      --br:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b0e1b,#10132a 60%,#0b0e1b);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;}
+    header{padding:24px 16px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:18px;margin:0}
+    .tag{display:inline-block;background:#1b2040;color:#9fb7ff;border:1px solid #2a3164;padding:2px 8px;border-radius:999px;font-size:12px}
+
+    main{padding:12px;max-width:1100px;margin:0 auto}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{background:var(--card);border:1px solid #222743;border-radius:var(--br);padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .card h2{font-size:16px;margin:0 0 10px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input, select, textarea{width:100%;background:#0f1224;color:var(--fg);border:1px solid #2a3164;border-radius:12px;padding:10px;font-size:14px}
+    textarea{min-height:160px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .controls{display:flex;flex-wrap:wrap;gap:10px}
+    button{cursor:pointer;background:#1a2b52;color:#dbe5ff;border:1px solid #2d4581;border-radius:12px;padding:10px 14px;font-weight:600}
+    button.primary{background:linear-gradient(180deg,#4d88ff,#2f6fed);border-color:#3366d6;color:white}
+    button.ghost{background:transparent;border-color:#38406e}
+    .hint{font-size:12px;color:var(--muted)}
+    .kbadge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;margin-left:6px;border:1px dashed #3d4575;color:#a2ace0}
+    footer{max-width:1100px;margin:14px auto 24px;padding:0 12px;color:#9aa3c9;font-size:12px}
+    .ok{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4581;background:#121736}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>CryptoLab — Cifrados educativos en el navegador</h1>
+      <div class="hint">Incluye <span class="pill">AES‑GCM</span>, <span class="pill">César</span>, <span class="pill">Vigenère</span>, <span class="pill">XOR</span>, <span class="pill">Rail Fence</span>, <span class="pill">Atbash</span>. 100% local (no sube datos).</div>
+    </div>
+    <div>
+      <span class="tag">Demo didáctica</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="card">
+        <h2>1) Entrada</h2>
+        <label for="mode">Modo</label>
+        <div class="row">
+          <select id="mode">
+            <option value="enc">Cifrar</option>
+            <option value="dec">Descifrar</option>
+          </select>
+          <select id="algo">
+            <option value="aes">AES‑GCM (con contraseña)</option>
+            <option value="caesar">César (desplazamiento)</option>
+            <option value="vigenere">Vigenère (clave)</option>
+            <option value="xor">XOR (clave)</option>
+            <option value="rail">Rail Fence (nº rieles)</option>
+            <option value="atbash">Atbash (auto‑inverso)</option>
+          </select>
+        </div>
+
+        <div id="keyFields" style="margin-top:10px"></div>
+
+        <label for="input" style="margin-top:10px">Texto</label>
+        <textarea id="input" placeholder="Escribe aquí el texto a cifrar o el cifrado a descifrar..."></textarea>
+
+        <div class="controls" style="margin-top:10px">
+          <button id="run" class="primary">Ejecutar</button>
+          <button id="copy" class="ghost">Copiar salida</button>
+          <button id="clear" class="ghost">Limpiar</button>
+          <button id="sample" class="ghost">Ejemplo</button>
+        </div>
+        <div id="msg" class="hint" style="margin-top:8px"></div>
+      </section>
+
+      <section class="card">
+        <h2>2) Salida</h2>
+        <label for="output">Resultado</label>
+        <textarea id="output" placeholder="Aquí aparecerá el resultado…" readonly></textarea>
+        <div class="hint" style="margin-top:8px">
+          <b>AES‑GCM</b> devuelve un paquete en Base64 que incluye <i>sal</i>, <i>iv</i> e iteraciones. Guarda ese texto para poder descifrar.
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:16px">
+      <h2>Notas rápidas</h2>
+      <ul class="hint">
+        <li>Este laboratorio es educativo. No usar los cifrados clásicos (César, Vigenère, XOR, Rail Fence, Atbash) para proteger información real.</li>
+        <li>AES‑GCM sí es moderno; aquí se deriva la clave de la contraseña usando PBKDF2‑SHA‑256 e incluye sal e iv aleatorios.</li>
+        <li>Todo corre localmente en tu navegador; ideal para GitHub Pages.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    Hecho para demostraciones en clase. Licencia MIT. Autor: Tú ✨
+  </footer>
+
+<script>
+// ---------- Utilidades generales ----------
+const $ = (s) => document.querySelector(s);
+const msg = (t, cls='') => { const el = document.getElementById('msg'); el.textContent = t; el.className = 'hint ' + cls; };
+
+function utf8Encode(str) { return new TextEncoder().encode(str); }
+function utf8Decode(buf) { return new TextDecoder().decode(buf); }
+
+function toBase64(bytes) {
+  let bin = '';
+  const arr = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes);
+  for (let i=0;i<arr.length;i++) bin += String.fromCharCode(arr[i]);
+  return btoa(bin);
+}
+function fromBase64(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function onlyLetters(s){ return s.normalize('NFD').replace(/[^A-Za-z]/g,'').toUpperCase(); }
+
+// ---------- Campos dinámicos de clave/parámetros ----------
+const keyFields = {
+  aes: () => `
+    <div class="row">
+      <div>
+        <label>Contraseña</label>
+        <input id="aesPass" type="password" placeholder="Ingresa una contraseña" />
+      </div>
+      <div>
+        <label>Iteraciones PBKDF2</label>
+        <input id="aesIter" type="number" min="20000" value="150000" />
+      </div>
+    </div>
+  `,
+  caesar: () => `
+    <label>Desplazamiento (−25..25)</label>
+    <input id="shift" type="number" min="-25" max="25" value="3" />
+  `,
+  vigenere: () => `
+    <label>Clave (solo letras)</label>
+    <input id="vigKey" type="text" placeholder="EJEMPLO" />
+  `,
+  xor: () => `
+    <label>Clave (se repetirá sobre los bytes)</label>
+    <input id="xorKey" type="text" placeholder="mi-clave" />
+  `,
+  rail: () => `
+    <label>Número de rieles (2..10)</label>
+    <input id="rails" type="number" min="2" max="10" value="3" />
+  `,
+  atbash: () => `<div class="hint">Atbash no requiere clave (es auto‑inverso).</div>`
+};
+
+function renderKeyFields(){
+  const algo = $('#algo').value;
+  $('#keyFields').innerHTML = keyFields[algo] ? keyFields[algo]() : '';
+}
+
+// ---------- Cifrados clásicos ----------
+function caesarShiftChar(ch, shift){
+  const code = ch.charCodeAt(0);
+  const A = (code>=65 && code<=90), a = (code>=97 && code<=122);
+  if (!A && !a) return ch;
+  const base = A ? 65 : 97; const off = (code - base + shift + 26*1000) % 26; return String.fromCharCode(base + off);
+}
+function caesar(text, shift){
+  return text.split('').map(c => caesarShiftChar(c, shift)).join('');
+}
+
+function vigenere(text, key, mode){
+  const k = onlyLetters(key);
+  if (!k.length) throw new Error('Clave Vigenère vacía');
+  let j=0; let out='';
+  for (const ch of text){
+    const cc = ch.charCodeAt(0);
+    const isU = (cc>=65 && cc<=90), isL = (cc>=97 && cc<=122);
+    if (!isU && !isL) { out += ch; continue; }
+    const base = isU?65:97;
+    const pi = cc - base;
+    const ki = (k.charCodeAt(j%k.length)-65);
+    const val = mode==='enc' ? (pi + ki)%26 : (pi - ki + 26)%26;
+    out += String.fromCharCode(base + val);
+    j++;
+  }
+  return out;
+}
+
+function xorBytes(dataBytes, keyBytes){
+  const out = new Uint8Array(dataBytes.length);
+  for (let i=0;i<dataBytes.length;i++) out[i] = dataBytes[i] ^ keyBytes[i % keyBytes.length];
+  return out;
+}
+
+function railFenceEncrypt(text, rails){
+  rails = Math.max(2, Math.min(10, rails|0));
+  const fence = Array.from({length: rails}, ()=>[]);
+  let r=0, dir=1;
+  for (const ch of text){
+    fence[r].push(ch);
+    r += dir; if (r===0||r===rails-1) dir*=-1;
+  }
+  return fence.map(row=>row.join('')).join('');
+}
+function railFenceDecrypt(cipher, rails){
+  rails = Math.max(2, Math.min(10, rails|0));
+  const len = cipher.length;
+  const pattern = [];
+  let r=0, dir=1;
+  for (let i=0;i<len;i++){
+    pattern.push(r); r += dir; if (r===0||r===rails-1) dir*=-1;
+  }
+  const counts = Array(rails).fill(0);
+  pattern.forEach(p=>counts[p]++);
+  const rows = []; let idx=0;
+  for (let rr=0; rr<rails; rr++){
+    rows[rr] = cipher.slice(idx, idx+counts[rr]).split('');
+    idx += counts[rr];
+  }
+  const out=[]; const pos = Array(rails).fill(0);
+  for (const p of pattern){ out.push(rows[p][pos[p]++]); }
+  return out.join('');
+}
+
+function atbash(text){
+  const A='A'.charCodeAt(0), Z='Z'.charCodeAt(0), a='a'.charCodeAt(0), z='z'.charCodeAt(0);
+  let out='';
+  for (const ch of text){
+    const c=ch.charCodeAt(0);
+    if (c>=A && c<=Z) out += String.fromCharCode(Z-(c-A));
+    else if (c>=a && c<=z) out += String.fromCharCode(z-(c-a));
+    else out += ch;
+  }
+  return out;
+}
+
+// ---------- AES‑GCM con Web Crypto ----------
+async function aesDeriveKey(password, salt, iterations){
+  const baseKey = await crypto.subtle.importKey('raw', utf8Encode(password), {name:'PBKDF2'}, false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations, hash:'SHA-256'},
+    baseKey,
+    {name:'AES-GCM', length:256},
+    false,
+    ['encrypt','decrypt']
+  );
+}
+async function aesEncrypt(password, plaintext, iterations=150000){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await aesDeriveKey(password, salt, iterations);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, utf8Encode(plaintext)));
+  const pkg = { a:'AES-GCM', i:iterations, s:toBase64(salt), v:toBase64(iv), c:toBase64(ct) };
+  return 'aesgcm:' + btoa(JSON.stringify(pkg));
+}
+async function aesDecrypt(password, bundle){
+  if (!bundle.startsWith('aesgcm:')) throw new Error('Formato AES inválido (falta prefijo aesgcm:)');
+  const pkg = JSON.parse(atob(bundle.slice(7)));
+  if (pkg.a!=='AES-GCM') throw new Error('Algoritmo no soportado');
+  const salt = fromBase64(pkg.s), iv = fromBase64(pkg.v), ct = fromBase64(pkg.c);
+  const key = await aesDeriveKey(password, salt, pkg.i|0 || 150000);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  return utf8Decode(pt);
+}
+
+// ---------- UI lógica ----------
+function ensure(val, msgText){ if(!val) throw new Error(msgText); }
+
+async function run(){
+  try{
+    msg('Procesando…');
+    const mode = $('#mode').value; const algo = $('#algo').value; const input = $('#input').value;
+    ensure(input.length>0, 'Escribe algún texto en la entrada');
+
+    let output='';
+    if (algo==='aes'){
+      const pass = $('#aesPass').value; const it = parseInt($('#aesIter').value||'150000',10);
+      ensure(pass && pass.length>=4, 'La contraseña debe tener al menos 4 caracteres');
+      if (mode==='enc') output = await aesEncrypt(pass, input, it);
+      else output = await aesDecrypt(pass, input);
+    }
+    else if (algo==='caesar'){
+      const s = parseInt($('#shift').value||'0',10); output = (mode==='enc') ? caesar(input, s) : caesar(input, -s);
+    }
+    else if (algo==='vigenere'){
+      const k = $('#vigKey').value; ensure(onlyLetters(k).length>0, 'Clave Vigenère requerida');
+      output = vigenere(input, k, mode);
+    }
+    else if (algo==='xor'){
+      const k = $('#xorKey').value; ensure(k && k.length>0, 'Clave XOR requerida');
+      const data = utf8Encode(input), keyB = utf8Encode(k);
+      const res = xorBytes(data, keyB);
+      output = (mode==='enc') ? ('xor:' + toBase64(res)) : utf8Decode(xorBytes(fromBase64(input.replace(/^xor:/,'')), keyB));
+    }
+    else if (algo==='rail'){
+      const r = parseInt($('#rails').value||'3',10);
+      output = (mode==='enc') ? railFenceEncrypt(input, r) : railFenceDecrypt(input, r);
+    }
+    else if (algo==='atbash'){
+      output = atbash(input); // mismo para cifrar/descifrar
+    }
+
+    $('#output').value = output;
+    msg('Listo ✔', 'ok');
+  }catch(e){
+    msg('Error: ' + e.message, 'bad');
+  }
+}
+
+function fillSample(){
+  const algo = $('#algo').value; const mode = $('#mode').value;
+  if (algo==='aes'){
+    $('#aesPass').value = 'demo-umsa-2025';
+    $('#input').value = (mode==='enc') ? 'Seguridad y criptografía: AES‑GCM en el navegador.' : '';
+  } else if (algo==='caesar'){
+    $('#shift').value = 7;
+    $('#input').value = (mode==='enc') ? 'CRYPTO LAB CESAR' : 'JYFWAV SHI JLZH Y';
+  } else if (algo==='vigenere'){
+    $('#vigKey').value = 'BOLIVIA';
+    $('#input').value = (mode==='enc') ? 'EDUCACION SUPERIOR' : 'FPIKCKNTR WDVWMRBF';
+  } else if (algo==='xor'){
+    $('#xorKey').value = 'clave';
+    $('#input').value = (mode==='enc') ? 'mensaje secreto con XOR' : 'xor:';
+  } else if (algo==='rail'){
+    $('#rails').value = 3;
+    $('#input').value = (mode==='enc') ? 'RAIL FENCE CIPHER DEMO' : 'R EEAMAILNCPRDOIFCEH E';
+  } else if (algo==='atbash'){
+    $('#input').value = 'Atbash demuestra inversión de alfabeto';
+  }
+}
+
+function copyOut(){
+  const out = $('#output').value; if(!out){ msg('No hay nada que copiar', 'warn'); return; }
+  navigator.clipboard.writeText(out).then(()=> msg('Copiado al portapapeles', 'ok'))
+    .catch(()=> msg('No se pudo copiar', 'bad'));
+}
+
+function clearAll(){ $('#input').value=''; $('#output').value=''; msg('Campos vacíos'); }
+
+// Inicialización UI
+renderKeyFields();
+$('#algo').addEventListener('change', renderKeyFields);
+$('#run').addEventListener('click', run);
+$('#sample').addEventListener('click', fillSample);
+$('#copy').addEventListener('click', copyOut);
+$('#clear').addEventListener('click', clearAll);
+
+</script>
+</body>
+</html>
